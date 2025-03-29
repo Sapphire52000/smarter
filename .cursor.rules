@@ -1,0 +1,80 @@
+# .cursor.rules
+
+## 🎯 Project Overview: Smart Pingpong System
+
+This project is a smart table tennis system integrating AI, computer vision, and real-time game automation using Flutter + Firebase for the app and Raspberry Pi for the hardware.
+
+---
+
+## 👨‍🔧 Developer Guidelines
+
+### 1. Architecture
+- Use **MVVM pattern** for Flutter code.
+- Firebase will be used for authentication, Firestore for data, and Storage for media.
+- Flask will be used on Raspberry Pi for AI + vision services, and it communicates with the Flutter app via HTTP API.
+
+### 2. App Structure
+- Admin and Player roles must have different views.
+- Main modules: User management, Smart scoreboard, Game automation, Video analysis.
+- Each screen and model should be cleanly separated into folders: `/models`, `/viewmodels`, `/views`, `/services`.
+
+### 3. Authentication
+- Use FirebaseAuth.
+- Support **Google & Apple login only**.
+- Auth logic should be centralized in `auth_service.dart`.
+
+### 4. Smart Scoreboard
+- Points can be incremented manually (button) or automatically via AI (vibration/camera).
+- Raspberry Pi sends point update requests to the app's backend via Flask API.
+
+### 5. AI Referee System
+- Use camera and sensors on Raspberry Pi.
+- Detect ball collision & edge hits (vibration sensor).
+- Upload game videos to Firebase Storage.
+- Provide highlight extraction or performance summary.
+
+### 6. Data Model & Firebase
+- Store all game data, player info, scores, and attendance logs in Firestore.
+- Use consistent naming and typing conventions in all models.
+- Keep `firebase_options.dart` auto-generated, and use `DefaultFirebaseOptions.currentPlatform`.
+- Design models with flexibility to handle future changes:
+  - Use optional fields (`String?`, `int?`) throughout model classes.
+  - Implement robust null handling and default values.
+  - Use `Map<String, dynamic>` for extensible fields.
+  - Include version fields in critical models to handle schema migration.
+  - Keep serialization/deserialization methods separate from core model logic.
+
+### 7. Package Management
+- **DO NOT change package versions** once they're established in pubspec.yaml.
+- If a new feature requires a newer package version, create an abstraction layer to isolate dependencies.
+- Use feature detection rather than version detection when possible.
+- Document any package-specific workarounds in code comments.
+- For version conflicts, prefer adaptation over upgrading dependencies.
+
+---
+
+## ✅ Cursor Instructions
+
+### When adding files:
+- Always use lowercase_with_underscores.
+- Organize by feature, not by type.
+
+### When generating UI:
+- Follow Flutter best practices.
+- Avoid hardcoded strings or sizes (use Theme and localization support).
+
+### When modifying data:
+- Update models & viewmodels together.
+- Add test data if needed in `/test_data`.
+- Ensure backward compatibility with existing data.
+- Add `fromJson` and `toJson` methods that gracefully handle missing fields.
+
+### When unclear:
+- Ask for clarification instead of guessing.
+- Prioritize maintainability and readability.
+
+---
+
+## 🧠 Rule of Thumb
+> "Keep the AI smart, the UI clean, and the data structured."
+> "Make models flexible, keep packages stable."
