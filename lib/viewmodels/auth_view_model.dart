@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
@@ -23,6 +24,8 @@ class AuthViewModel extends ChangeNotifier {
   User? _firebaseUser;
   UserModel? _user;
   String? _errorMessage;
+  bool _isUpdatingProfile = false;
+  bool _isUploadingImage = false;
 
   // 게터
   AuthStatus get status => _status;
@@ -31,16 +34,34 @@ class AuthViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
   bool get isLoading => _status == AuthStatus.loading;
+  bool get isUpdatingProfile => _isUpdatingProfile;
+  bool get isUploadingImage => _isUploadingImage;
 
-  // 역할 관련 게터
-  bool get isSuperAdmin => _user?.role == UserRole.superAdmin;
-  bool get isAcademyOwner => _user?.role == UserRole.academyOwner;
-  bool get isTeacher => _user?.role == UserRole.teacher;
-  bool get isParent => _user?.role == UserRole.parent;
-  bool get isStudent => _user?.role == UserRole.student;
+  /// 사용자 역할 문자열 반환
+  String get userRole {
+    if (_user == null) return '';
+
+    switch (_user!.role) {
+      case UserRole.academyOwner:
+        return 'academy';
+      case UserRole.teacher:
+        return 'teacher';
+      case UserRole.parent:
+        return 'parent';
+      case UserRole.student:
+        return 'student';
+      case UserRole.superAdmin:
+        return 'admin';
+      default:
+        return '';
+    }
+  }
 
   /// 생성자 - 인증 상태 변화 감지 설정
   AuthViewModel() {
+    _status = AuthStatus.loading;
+    notifyListeners();
+
     _authService.authStateChanges.listen(_onAuthStateChanged);
   }
 
@@ -63,26 +84,43 @@ class AuthViewModel extends ChangeNotifier {
       UserModel? userModel = await _userService.getUserById(firebaseUser.uid);
 
       // 사용자 정보가 없으면 신규 사용자로 생성
-      userModel ??= await _userService.createUser(
-        id: firebaseUser.uid,
-        email: firebaseUser.email ?? '',
-        displayName: firebaseUser.displayName ?? '사용자',
-        photoURL: firebaseUser.photoURL,
-      );
+      if (userModel == null) {
+        try {
+          userModel = await _userService.createUser(
+            uid: firebaseUser.uid,
+            email: firebaseUser.email ?? '',
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+          );
+        } catch (e) {
+          // 사용자 생성 실패 시에도 임시 사용자 모델 생성
+          userModel = UserModel.initial(
+            id: firebaseUser.uid,
+            email: firebaseUser.email ?? '',
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+          );
+        }
+      }
 
       _user = userModel;
       _status = AuthStatus.authenticated;
     } catch (e) {
-      print('사용자 정보 로드 오류: $e');
       _status = AuthStatus.error;
       _errorMessage = '사용자 정보를 불러오는 중 오류가 발생했습니다';
-      // 기본 모델이라도 생성 (오류 복구용)
-      _user = UserModel.initial(
-        id: firebaseUser.uid,
-        email: firebaseUser.email ?? '',
-        displayName: firebaseUser.displayName ?? '사용자',
-        photoURL: firebaseUser.photoURL,
-      );
+
+      // 오류 발생 시에도 임시 사용자 모델 생성하여 기본 기능 유지
+      try {
+        _user = UserModel.initial(
+          id: firebaseUser.uid,
+          email: firebaseUser.email ?? '',
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
+        );
+        _status = AuthStatus.authenticated;
+      } catch (e) {
+        // 임시 사용자 모델 생성 실패
+      }
     }
 
     notifyListeners();
@@ -92,6 +130,16 @@ class AuthViewModel extends ChangeNotifier {
   Future<bool> signInWithGoogle() async {
     try {
       _setLoading();
+
+      // 먼저 기존에 로그인된 계정이 있으면 로그아웃
+      try {
+        if (_firebaseUser != null) {
+          await _authService.signOut();
+        }
+      } catch (e) {
+        // 로그아웃 중 오류(무시됨)
+      }
+
       final error = await _authService.signInWithGoogle();
 
       if (error != null) {
@@ -106,75 +154,80 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  /// 애플 로그인 (추후 구현)
-  Future<bool> signInWithApple() async {
-    try {
-      _setLoading();
-      // 애플 로그인 구현 예정
-      _setError('애플 로그인 기능은 아직 구현되지 않았습니다.');
-      return false;
-    } catch (e) {
-      _setError(e.toString());
-      return false;
-    }
-  }
-
   /// 로그아웃
   Future<void> signOut() async {
     try {
+      _setLoading();
       await _authService.signOut();
     } catch (e) {
       _setError(e.toString());
     }
   }
 
-  /// 사용자 역할 업데이트
-  Future<void> updateUserRole(UserRole role) async {
+  /// 사용자 프로필 업데이트
+  Future<bool> updateProfile({
+    String? displayName,
+    String? academyName,
+    String? academyAddress,
+    String? academyPhone,
+    UserRole? role,
+    Map<String, dynamic>? additionalInfo,
+  }) async {
     try {
-      if (_user == null || _firebaseUser == null) return;
+      if (_firebaseUser == null || _user == null) {
+        _setError('로그인이 필요합니다');
+        return false;
+      }
 
-      _setLoading();
-      final updatedUser = await _userService.updateUserRole(_user!.id, role);
-      _user = updatedUser;
-      _status = AuthStatus.authenticated;
+      _isUpdatingProfile = true;
       notifyListeners();
-    } catch (e) {
-      _setError('역할 업데이트 오류: ${e.toString()}');
-    }
-  }
 
-  /// 사용자 학원 연결
-  Future<void> updateUserAcademy(String academyId) async {
-    try {
-      if (_user == null || _firebaseUser == null) return;
-
-      _setLoading();
-      final updatedUser = await _userService.updateUserAcademy(
-        _user!.id,
-        academyId,
+      final updatedUser = await _userService.updateUserProfile(
+        uid: _firebaseUser!.uid,
+        displayName: displayName,
+        academyName: academyName,
+        academyAddress: academyAddress,
+        academyPhone: academyPhone,
+        role: role,
+        additionalInfo: additionalInfo,
       );
+
       _user = updatedUser;
-      _status = AuthStatus.authenticated;
+      _isUpdatingProfile = false;
       notifyListeners();
+      return true;
     } catch (e) {
-      _setError('학원 업데이트 오류: ${e.toString()}');
+      _isUpdatingProfile = false;
+      _setError('프로필 업데이트 실패: ${e.toString()}');
+      return false;
     }
   }
 
-  /// 사용자 역할 초기화
-  Future<void> resetUserRole() async {
+  /// 프로필 이미지 업로드
+  Future<bool> uploadProfileImage(File imageFile) async {
     try {
-      if (_user == null || _firebaseUser == null) return;
+      if (_firebaseUser == null || _user == null) {
+        _setError('로그인이 필요합니다');
+        return false;
+      }
 
-      _setLoading();
-      // 역할을 null로 설정하여 초기화
-      final updatedUser = _user!.copyWith(role: null, academyId: null);
-      await _userService.updateUser(updatedUser);
-      _user = updatedUser;
-      _status = AuthStatus.authenticated;
+      _isUploadingImage = true;
       notifyListeners();
+
+      final photoURL = await _userService.uploadProfileImage(
+        _firebaseUser!.uid,
+        imageFile,
+      );
+
+      // 사용자 모델 업데이트
+      _user = _user!.copyWith(photoURL: photoURL);
+      _isUploadingImage = false;
+      notifyListeners();
+      return true;
     } catch (e) {
-      _setError('역할 초기화 오류: ${e.toString()}');
+      _isUploadingImage = false;
+      _setError('이미지 업로드 실패: ${e.toString()}');
+      return false;
     }
   }
 

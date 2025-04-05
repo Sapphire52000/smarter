@@ -57,19 +57,21 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCopMD1SqI1k0BK3qYC5Qhqs91LyhJebl0',
-    appId: '1:505346907710:android:4eed4df92638dd04843b6f',
-    messagingSenderId: '505346907710',
-    projectId: 'fir-setup-3425b',
-    storageBucket: 'fir-setup-3425b.firebasestorage.app',
+    apiKey: 'AIzaSyDKJ0yQ4rEGI-Fy6lwM0grbSOPqDjfkhOY',
+    appId: '1:637861580830:android:b793ea51d977bfaa085e0f',
+    messagingSenderId: '637861580830',
+    projectId: 'smartable-42ed4',
+    storageBucket: 'smartable-42ed4.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCQ854r8YRDep-oJmeubCwvlSTJxRG_3zU',
-    appId: '1:505346907710:ios:2d0b9df3527d5f0f843b6f',
-    messagingSenderId: '505346907710',
-    projectId: 'fir-setup-3425b',
-    storageBucket: 'fir-setup-3425b.firebasestorage.app',
-    iosBundleId: 'com.example.firebasesetup',
+    apiKey: 'AIzaSyBWOTkaPkiRjJ-4MNHqZRf6scTLUvySPuo',
+    appId: '1:637861580830:ios:a51a981dd7c99346085e0f',
+    messagingSenderId: '637861580830',
+    projectId: 'smartable-42ed4',
+    storageBucket: 'smartable-42ed4.firebasestorage.app',
+    iosClientId: '637861580830-2s525l6urnku2cle4nfa2relktj138c5.apps.googleusercontent.com',
+    iosBundleId: 'com.example.smartable',
   );
+
 }

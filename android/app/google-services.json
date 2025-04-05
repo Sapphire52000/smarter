@@ -1,45 +1,37 @@
 {
   "project_info": {
-    "project_number": "505346907710",
-    "project_id": "fir-setup-3425b",
-    "storage_bucket": "fir-setup-3425b.firebasestorage.app"
+    "project_number": "637861580830",
+    "project_id": "smartable-42ed4",
+    "storage_bucket": "smartable-42ed4.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:505346907710:android:4eed4df92638dd04843b6f",
+        "mobilesdk_app_id": "1:637861580830:android:b793ea51d977bfaa085e0f",
         "android_client_info": {
           "package_name": "com.example.firebasesetup"
         }
       },
       "oauth_client": [
         {
-          "client_id": "505346907710-sep13hs96tti14gl8ruea81dqtorfcqv.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.firebasesetup",
-            "certificate_hash": "bdeeab40068f736bdaf1e1f335de356470e21e65"
-          }
-        },
-        {
-          "client_id": "505346907710-8f7k1754fqd9q2fke20ob0t2rqapkn41.apps.googleusercontent.com",
+          "client_id": "637861580830-1qhhvcm1t5pnk0gkm7tjd4f37s167c1e.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCopMD1SqI1k0BK3qYC5Qhqs91LyhJebl0"
+          "current_key": "AIzaSyDKJ0yQ4rEGI-Fy6lwM0grbSOPqDjfkhOY"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "505346907710-8f7k1754fqd9q2fke20ob0t2rqapkn41.apps.googleusercontent.com",
+              "client_id": "637861580830-1qhhvcm1t5pnk0gkm7tjd4f37s167c1e.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "505346907710-enhtmv3osde11tqp3tm514rile76tf06.apps.googleusercontent.com",
+              "client_id": "637861580830-mnu04suh053pc6oucvhf3mpss7c96kfu.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.example.firebasesetup"

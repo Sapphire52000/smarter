@@ -1,153 +1,174 @@
-/// 사용자 역할 구분
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+/// 사용자 역할 정의
 enum UserRole {
+  superAdmin, // 슈퍼계정
+  academyOwner, // 학원장
+  teacher, // 선생님
+  parent, // 학부모
   student, // 학생
-  coach, // 코치
-  admin, // 관리자
 }
 
 /// 사용자 모델 클래스
 class UserModel {
-  /// 사용자 고유 ID (Firebase Auth UID)
-  final String? uid;
-
-  /// 사용자 이름
-  final String? name;
-
-  /// 사용자 이메일
-  final String? email;
-
-  /// 사용자 프로필 사진 URL
-  final String? photoUrl;
-
-  /// 사용자 역할 (기본값: 학생)
+  final String uid;
+  final String email;
+  final String? displayName;
+  final String? photoURL;
   final UserRole role;
+  final String? academyId;
+  final String? academyName;
+  final String? academyAddress;
+  final String? academyPhone;
+  final Map<String, dynamic>? additionalInfo;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
-  /// 생성 시간
-  final DateTime? createdAt;
-
-  /// 마지막 로그인 시간
-  final DateTime? lastLoginAt;
-
-  /// 추가 속성 (확장성을 위한 동적 필드)
-  final Map<String, dynamic>? additionalData;
-
-  /// 모델 버전 (스키마 마이그레이션 지원용)
-  final int version;
-
-  /// 기본 생성자
   UserModel({
-    this.uid,
-    this.name,
-    this.email,
-    this.photoUrl,
-    this.role = UserRole.student,
-    this.createdAt,
-    this.lastLoginAt,
-    this.additionalData,
-    this.version = 1,
+    required this.uid,
+    required this.email,
+    this.displayName,
+    this.photoURL,
+    required this.role,
+    this.academyId,
+    this.academyName,
+    this.academyAddress,
+    this.academyPhone,
+    this.additionalInfo,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
-  /// Firebase Auth User로부터 모델 생성
-  factory UserModel.fromFirebaseUser(
-    dynamic user, {
-    UserRole role = UserRole.student,
+  /// 기본 사용자 생성 (첫 로그인 시)
+  factory UserModel.initial({
+    required String id,
+    required String email,
+    String? displayName,
+    String? photoURL,
   }) {
-    if (user == null) return UserModel();
+    return UserModel(
+      uid: id,
+      email: email,
+      displayName: displayName,
+      photoURL: photoURL,
+      role: UserRole.student,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  /// Firestore 문서에서 사용자 모델 생성
+  factory UserModel.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    final role = _parseUserRole(data['role'] ?? 'student');
 
     return UserModel(
-      uid: user.uid,
-      name: user.displayName,
-      email: user.email,
-      photoUrl: user.photoURL,
+      uid: doc.id,
+      email: data['email'] ?? '',
+      displayName: data['displayName'] ?? '',
+      photoURL: data['photoURL'],
       role: role,
-      lastLoginAt: DateTime.now(),
+      academyId: data['academyId'],
+      academyName: data['academyName'],
+      academyAddress: data['academyAddress'],
+      academyPhone: data['academyPhone'],
+      additionalInfo: data['additionalInfo'],
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
     );
   }
 
-  /// JSON에서 모델 생성
-  factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      uid: json['uid'],
-      name: json['name'],
-      email: json['email'],
-      photoUrl: json['photo_url'],
-      role: _parseRole(json['role']),
-      createdAt: _parseDateTime(json['created_at']),
-      lastLoginAt: _parseDateTime(json['last_login_at']),
-      additionalData: json['additional_data'],
-      version: json['version'] ?? 1,
-    );
+  /// 문자열을 UserRole enum으로 변환
+  static UserRole _parseUserRole(String roleStr) {
+    // 역할 문자열 소문자로 변환하여 비교 (대소문자 차이로 인한 문제 방지)
+    final lowerRoleStr = roleStr.toLowerCase();
+
+    if (lowerRoleStr == 'academy' || lowerRoleStr == 'academyowner') {
+      return UserRole.academyOwner;
+    } else if (lowerRoleStr == 'superadmin' || lowerRoleStr == 'admin') {
+      return UserRole.superAdmin;
+    } else if (lowerRoleStr == 'teacher') {
+      return UserRole.teacher;
+    } else if (lowerRoleStr == 'parent') {
+      return UserRole.parent;
+    } else if (lowerRoleStr == 'student') {
+      return UserRole.student;
+    } else {
+      return UserRole.student;
+    }
   }
 
-  /// 모델을 JSON으로 변환
-  Map<String, dynamic> toJson() {
-    return {
+  /// 문자열을 UserRole enum으로 변환
+  static UserRole _parseRole(dynamic roleStr) {
+    if (roleStr == null) return UserRole.student;
+
+    if (roleStr is String) {
+      switch (roleStr) {
+        case 'superAdmin':
+          return UserRole.superAdmin;
+        case 'academyOwner':
+          return UserRole.academyOwner;
+        case 'teacher':
+          return UserRole.teacher;
+        case 'parent':
+          return UserRole.parent;
+        case 'student':
+        default:
+          return UserRole.student;
+      }
+    }
+
+    return UserRole.student;
+  }
+
+  /// Firestore에 저장하기 위한 Map 변환
+  Map<String, dynamic> toMap() {
+    final map = {
       'uid': uid,
-      'name': name,
       'email': email,
-      'photo_url': photoUrl,
+      'displayName': displayName,
+      'photoURL': photoURL,
       'role': role.toString().split('.').last,
-      'created_at': createdAt?.toIso8601String(),
-      'last_login_at': lastLoginAt?.toIso8601String(),
-      'additional_data': additionalData,
-      'version': version,
+      'academyId': academyId,
+      'academyName': academyName,
+      'academyAddress': academyAddress,
+      'academyPhone': academyPhone,
+      'additionalInfo': additionalInfo,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
     };
+    print('Firestore에 저장할 데이터: $map');
+    return map;
   }
 
-  /// 사용자 정보 업데이트를 위한 복사 생성자
+  /// 사용자 데이터 업데이트
   UserModel copyWith({
-    String? uid,
-    String? name,
-    String? email,
-    String? photoUrl,
+    String? displayName,
+    String? photoURL,
     UserRole? role,
-    DateTime? createdAt,
-    DateTime? lastLoginAt,
-    Map<String, dynamic>? additionalData,
-    int? version,
+    String? academyId,
+    String? academyName,
+    String? academyAddress,
+    String? academyPhone,
+    Map<String, dynamic>? additionalInfo,
   }) {
     return UserModel(
-      uid: uid ?? this.uid,
-      name: name ?? this.name,
-      email: email ?? this.email,
-      photoUrl: photoUrl ?? this.photoUrl,
+      uid: uid,
+      email: email,
+      displayName: displayName ?? this.displayName,
+      photoURL: photoURL ?? this.photoURL,
       role: role ?? this.role,
-      createdAt: createdAt ?? this.createdAt,
-      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
-      additionalData: additionalData ?? this.additionalData,
-      version: version ?? this.version,
+      academyId: academyId ?? this.academyId,
+      academyName: academyName ?? this.academyName,
+      academyAddress: academyAddress ?? this.academyAddress,
+      academyPhone: academyPhone ?? this.academyPhone,
+      additionalInfo: additionalInfo ?? this.additionalInfo,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
-  }
-
-  /// 문자열 역할을 UserRole enum으로 파싱
-  static UserRole _parseRole(String? role) {
-    if (role == null) return UserRole.student;
-
-    switch (role) {
-      case 'coach':
-        return UserRole.coach;
-      case 'admin':
-        return UserRole.admin;
-      case 'student':
-      default:
-        return UserRole.student;
-    }
-  }
-
-  /// ISO8601 문자열을 DateTime으로 파싱
-  static DateTime? _parseDateTime(dynamic dateTime) {
-    if (dateTime == null) return null;
-    if (dateTime is DateTime) return dateTime;
-
-    try {
-      return DateTime.parse(dateTime.toString());
-    } catch (e) {
-      return null;
-    }
   }
 
   @override
-  String toString() {
-    return 'UserModel(uid: $uid, name: $name, email: $email, role: $role)';
-  }
+  String toString() =>
+      'UserModel(uid: $uid, displayName: $displayName, role: $role)';
 }

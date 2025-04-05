@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
-import 'views/auth/login_view.dart';
-import 'views/home/home_view.dart';
 import 'viewmodels/auth_view_model.dart';
-import 'utils/theme.dart';
-
-// 전역 변수로 선언하여 앱 전체에서 재사용 가능하도록 합니다
-final GoogleSignIn googleSignIn = GoogleSignIn();
+import 'viewmodels/student_view_model.dart';
+import 'viewmodels/class_view_model.dart';
+import 'viewmodels/attendance_view_model.dart';
+import 'viewmodels/chat_view_model.dart';
+import 'views/common/login_view.dart';
+import 'views/academy/academy_home_view.dart';
+import 'views/teacher/teacher_home_view.dart';
+import 'views/parent/parent_home_view.dart';
+import 'views/student/student_home_view.dart';
 
 void main() async {
   // Flutter 엔진이 위젯에 바인딩되도록 보장
@@ -21,16 +24,24 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    print('Firebase 초기화 성공');
 
-    // Google Sign In 초기화는 나중에 필요할 때 수행
+    // intl 패키지의 한국어 로케일 초기화
+    await initializeDateFormatting('ko_KR', null);
+    Intl.defaultLocale = 'ko_KR';
   } catch (e) {
-    print('Firebase 초기화 오류: $e');
+    // Firebase 초기화 실패 (오류 처리)
+    print('초기화 오류: $e');
   }
 
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthViewModel())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider(create: (_) => StudentViewModel()),
+        ChangeNotifierProvider(create: (_) => ClassViewModel()),
+        ChangeNotifierProvider(create: (_) => AttendanceViewModel()),
+        ChangeNotifierProvider(create: (_) => ChatViewModel()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -41,60 +52,46 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authViewModel = Provider.of<AuthViewModel>(context);
+
     return MaterialApp(
-      title: 'Pingtelligent',
-      theme: AppTheme.lightTheme,
-      home: Consumer<AuthViewModel>(
-        builder: (context, authViewModel, child) {
-          // 인증 상태에 따라 화면 분기
-          switch (authViewModel.status) {
-            case AuthStatus.authenticated:
-              return const HomeView();
-            case AuthStatus.unauthenticated:
-              return const LoginView();
-            case AuthStatus.loading:
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            case AuthStatus.error:
-              return Scaffold(
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: Colors.red,
-                        size: 60,
-                      ),
-                      const SizedBox(height: 16),
-                      Text('오류가 발생했습니다', style: AppTheme.headingMedium),
-                      const SizedBox(height: 8),
-                      Text(
-                        authViewModel.errorMessage ?? '알 수 없는 오류',
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => authViewModel.clearError(),
-                        child: const Text('다시 시도'),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            case AuthStatus.initial:
-            default:
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-          }
-        },
+      title: 'Smartable',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
       ),
-      routes: {
-        // 추후 라우트 정의 예정
-        '/home': (context) => const HomeView(),
+      home: _buildHomeScreen(authViewModel),
+      onGenerateRoute: (settings) {
+        return MaterialPageRoute(
+          builder: (context) => _buildHomeScreen(authViewModel),
+        );
       },
     );
+  }
+
+  // 사용자 역할에 따라 적절한 홈 화면 반환
+  Widget _buildHomeScreen(AuthViewModel authViewModel) {
+    // 인증되지 않은 경우 로그인 화면 표시
+    if (!authViewModel.isAuthenticated) {
+      return const LoginView();
+    }
+
+    // 사용자 역할에 따라 적절한 홈 화면 반환
+    switch (authViewModel.userRole) {
+      case 'academy':
+        return const AcademyHomeView();
+      case 'teacher':
+        return const TeacherHomeView();
+      case 'parent':
+        return const ParentHomeView();
+      case 'student':
+        return const StudentHomeView();
+      case 'admin':
+        return const AcademyHomeView(); // 슈퍼관리자는 학원 관리자와 같은 화면 사용
+      default:
+        // 역할이 지정되지 않은 경우 기본적으로 학생 화면 반환
+        return const StudentHomeView();
+    }
   }
 }
