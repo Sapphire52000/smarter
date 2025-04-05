@@ -51,7 +51,7 @@ class UserModel {
       email: email,
       displayName: displayName,
       photoURL: photoURL,
-      role: UserRole.student,
+      role: UserRole.academyOwner,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -60,75 +60,87 @@ class UserModel {
   /// Firestore 문서에서 사용자 모델 생성
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    final role = _parseUserRole(data['role'] ?? 'student');
+
+    // 역할 열거형 변환
+    UserRole userRole = UserRole.student;
+    final roleString = data['role'] as String?;
+    if (roleString != null) {
+      if (roleString == 'academyOwner') {
+        userRole = UserRole.academyOwner;
+      } else if (roleString == 'teacher') {
+        userRole = UserRole.teacher;
+      } else if (roleString == 'parent') {
+        userRole = UserRole.parent;
+      } else if (roleString == 'student') {
+        userRole = UserRole.student;
+      } else if (roleString == 'superAdmin') {
+        userRole = UserRole.superAdmin;
+      }
+    }
+
+    // 날짜 변환
+    DateTime createdAt = DateTime.now();
+    DateTime updatedAt = DateTime.now();
+
+    if (data['createdAt'] != null) {
+      if (data['createdAt'] is Timestamp) {
+        createdAt = (data['createdAt'] as Timestamp).toDate();
+      } else if (data['createdAt'] is String) {
+        createdAt = DateTime.parse(data['createdAt'] as String);
+      }
+    }
+
+    if (data['updatedAt'] != null) {
+      if (data['updatedAt'] is Timestamp) {
+        updatedAt = (data['updatedAt'] as Timestamp).toDate();
+      } else if (data['updatedAt'] is String) {
+        updatedAt = DateTime.parse(data['updatedAt'] as String);
+      }
+    }
 
     return UserModel(
       uid: doc.id,
       email: data['email'] ?? '',
-      displayName: data['displayName'] ?? '',
+      displayName: data['displayName'],
       photoURL: data['photoURL'],
-      role: role,
+      role: userRole,
       academyId: data['academyId'],
       academyName: data['academyName'],
       academyAddress: data['academyAddress'],
       academyPhone: data['academyPhone'],
-      additionalInfo: data['additionalInfo'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      additionalInfo: data['additionalInfo'] as Map<String, dynamic>?,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     );
   }
 
-  /// 문자열을 UserRole enum으로 변환
-  static UserRole _parseUserRole(String roleStr) {
-    // 역할 문자열 소문자로 변환하여 비교 (대소문자 차이로 인한 문제 방지)
-    final lowerRoleStr = roleStr.toLowerCase();
-
-    if (lowerRoleStr == 'academy' || lowerRoleStr == 'academyowner') {
-      return UserRole.academyOwner;
-    } else if (lowerRoleStr == 'superadmin' || lowerRoleStr == 'admin') {
-      return UserRole.superAdmin;
-    } else if (lowerRoleStr == 'teacher') {
-      return UserRole.teacher;
-    } else if (lowerRoleStr == 'parent') {
-      return UserRole.parent;
-    } else if (lowerRoleStr == 'student') {
-      return UserRole.student;
-    } else {
-      return UserRole.student;
-    }
-  }
-
-  /// 문자열을 UserRole enum으로 변환
-  static UserRole _parseRole(dynamic roleStr) {
-    if (roleStr == null) return UserRole.student;
-
-    if (roleStr is String) {
-      switch (roleStr) {
-        case 'superAdmin':
-          return UserRole.superAdmin;
-        case 'academyOwner':
-          return UserRole.academyOwner;
-        case 'teacher':
-          return UserRole.teacher;
-        case 'parent':
-          return UserRole.parent;
-        case 'student':
-        default:
-          return UserRole.student;
-      }
-    }
-
-    return UserRole.student;
-  }
-
-  /// Firestore에 저장하기 위한 Map 변환
+  /// Firestore에 저장할 맵 형태로 변환
   Map<String, dynamic> toMap() {
+    String roleString;
+    switch (role) {
+      case UserRole.academyOwner:
+        roleString = 'academyOwner';
+        break;
+      case UserRole.teacher:
+        roleString = 'teacher';
+        break;
+      case UserRole.parent:
+        roleString = 'parent';
+        break;
+      case UserRole.student:
+        roleString = 'student';
+        break;
+      case UserRole.superAdmin:
+        roleString = 'superAdmin';
+        break;
+    }
+
     final map = {
       'uid': uid,
       'email': email,
       'displayName': displayName,
       'photoURL': photoURL,
-      'role': role.toString().split('.').last,
+      'role': roleString,
       'academyId': academyId,
       'academyName': academyName,
       'academyAddress': academyAddress,
@@ -137,11 +149,12 @@ class UserModel {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
-    print('Firestore에 저장할 데이터: $map');
+
+    // Firestore에 저장할 데이터
     return map;
   }
 
-  /// 사용자 데이터 업데이트
+  // 특정 필드만 업데이트하는 복사 메서드
   UserModel copyWith({
     String? displayName,
     String? photoURL,
@@ -164,7 +177,7 @@ class UserModel {
       academyPhone: academyPhone ?? this.academyPhone,
       additionalInfo: additionalInfo ?? this.additionalInfo,
       createdAt: createdAt,
-      updatedAt: updatedAt,
+      updatedAt: DateTime.now(),
     );
   }
 

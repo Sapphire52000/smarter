@@ -22,7 +22,7 @@ class UserService {
 
       return null;
     } catch (e) {
-      print('사용자 정보 조회 오류: $e');
+      // 사용자 정보 조회 오류
       rethrow;
     }
   }
@@ -42,7 +42,7 @@ class UserService {
         email: email,
         displayName: displayName,
         photoURL: photoURL,
-        role: UserRole.student, // 기본 역할은 학생
+        role: UserRole.academyOwner, // 기본 역할을 학원장으로 설정
         createdAt: now,
         updatedAt: now,
       );
@@ -51,7 +51,7 @@ class UserService {
 
       return user;
     } catch (e) {
-      print('사용자 생성 오류: $e');
+      // 사용자 생성 오류
       rethrow;
     }
   }
@@ -62,7 +62,7 @@ class UserService {
       await _usersCollection.doc(user.uid).update(user.toMap());
       return user;
     } catch (e) {
-      print('사용자 업데이트 오류: $e');
+      // 사용자 업데이트 오류
       rethrow;
     }
   }
