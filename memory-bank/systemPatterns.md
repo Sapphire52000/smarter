@@ -53,3 +53,89 @@ Smartable은 MVVM(Model-View-ViewModel) 아키텍처 패턴을 따릅니다:
 2. 재사용 가능한 위젯 컴포넌트 개발
 3. 비즈니스 로직과 UI 분리 유지
 4. 기능별 서비스 모듈화 
+
+## 시간표 관리 시스템 구조
+Smartable의 시간표 관리 시스템은 역할별로 분리된 구조를 가지며, 공통 컴포넌트와 유틸리티를 재사용합니다:
+
+### 파일 구조
+```
+lib/
+  ├── models/
+  │    └── schedule_model.dart       # 시간표 데이터 모델
+  │
+  ├── viewmodels/
+  │    └── schedule_view_model.dart  # 시간표 관리 뷰모델
+  │
+  ├── views/
+  │    ├── schedule/                 # 공통 시간표 컴포넌트
+  │    │    ├── components/          # 재사용 가능한 UI 컴포넌트
+  │    │    │    ├── date_header_widget.dart
+  │    │    │    ├── schedule_block_widget.dart
+  │    │    │    ├── schedule_grid_widget.dart
+  │    │    │    ├── time_slots_column_widget.dart
+  │    │    │    └── color_selector_widget.dart
+  │    │    │
+  │    │    └── utils/               # 일정 관련 유틸리티
+  │    │         ├── date_utils.dart
+  │    │         └── schedule_formatter.dart
+  │    │
+  │    ├── academy/schedule/         # 학원 관리자용 시간표
+  │    │    ├── components/
+  │    │    ├── schedule_view.dart   # 일간 시간표
+  │    │    └── academy_weekly_schedule_view.dart # 주간 시간표
+  │    │
+  │    ├── teacher/schedule/         # 선생님용 시간표
+  │    │    ├── components/
+  │    │    └── schedule_view.dart   # 일간 시간표
+  │    │
+  │    ├── parent/schedule/          # 학부모용 시간표
+  │    │    ├── components/
+  │    │    ├── schedule_view.dart   # 일간 시간표
+  │    │    └── weekly_schedule_view.dart # 주간 시간표
+  │    │
+  │    └── student/schedule/         # 학생용 시간표
+  │         ├── components/
+  │         └── schedule_view.dart   # 일간 시간표
+```
+
+### 컴포넌트 구조
+1. **공통 컴포넌트** (`views/schedule/components/`):
+   - `date_header_widget.dart`: 날짜 선택 및 네비게이션 헤더
+   - `schedule_block_widget.dart`: 개별 일정 블록 표시
+   - `schedule_grid_widget.dart`: 시간표 그리드 레이아웃
+   - `time_slots_column_widget.dart`: 시간 슬롯 컬럼
+   - `color_selector_widget.dart`: 일정 색상 선택기
+
+2. **유틸리티** (`views/schedule/utils/`):
+   - `date_utils.dart`: 날짜 조작 및 포맷팅
+   - `schedule_formatter.dart`: 일정 데이터 포맷팅
+
+### 역할별 기능 차이
+1. **학원 관리자** (`views/academy/schedule/`):
+   - 모든 일정 생성, 수정, 삭제 권한
+   - 주간/일간 뷰 모두 제공
+   - 일정 색상 변경 및 상세 설정
+
+2. **선생님** (`views/teacher/schedule/`):
+   - 담당 반 일정 조회 및 관리
+   - 자신의 일정 생성, 수정 가능
+
+3. **학부모** (`views/parent/schedule/`):
+   - 자녀 일정 조회 전용
+   - 주간/일간 뷰 모두 제공
+   - 상세 설명 및 위치 정보 확인
+
+4. **학생** (`views/student/schedule/`):
+   - 자신의 일정 조회 전용
+   - 상세 설명 및 위치 정보 확인
+
+### 데이터 흐름
+```
+User Interaction → View → ScheduleViewModel → ScheduleService → Firebase
+```
+
+1. 사용자가 일정 관련 액션 수행 (생성, 수정, 삭제, 조회)
+2. View는 액션을 ViewModel에 전달
+3. ViewModel은 비즈니스 로직 처리 후 Service를 통해 데이터 저장/조회
+4. 데이터 변경 시 ViewModel은 View에 알림 전송
+5. View는 새로운 데이터로 UI 업데이트 
