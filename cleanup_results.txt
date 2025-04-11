@@ -1,0 +1,23 @@
+불필요한 파일 삭제 완료! 현재 파일 구조:
+
+--- 역할별 시간표 ---
+lib/views/academy/schedule/academy_schedule_view.dart
+lib/views/academy/schedule/academy_weekly_schedule_view.dart
+lib/views/academy/schedule/components/current_time_indicator_widget.dart
+lib/views/academy/schedule/components/date_header_widget.dart
+lib/views/academy/schedule/components/schedule_block_widget.dart
+lib/views/academy/schedule/components/week_day_header_widget.dart
+lib/views/academy/schedule/schedule_view.dart
+lib/views/parent/schedule/schedule_view.dart
+lib/views/parent/schedule/weekly_schedule_view.dart
+lib/views/student/schedule/schedule_view.dart
+lib/views/teacher/schedule/schedule_view.dart
+
+--- 공통 컴포넌트 ---
+lib/views/schedule/components/color_selector_widget.dart
+lib/views/schedule/components/date_header_widget.dart
+lib/views/schedule/components/schedule_block_widget.dart
+lib/views/schedule/components/schedule_grid_widget.dart
+lib/views/schedule/components/time_slots_column_widget.dart
+lib/views/schedule/utils/date_utils.dart
+lib/views/schedule/utils/schedule_formatter.dart

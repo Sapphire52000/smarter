@@ -9,6 +9,7 @@ import 'viewmodels/student_view_model.dart';
 import 'viewmodels/class_view_model.dart';
 import 'viewmodels/attendance_view_model.dart';
 import 'viewmodels/chat_view_model.dart';
+import 'viewmodels/schedule_view_model.dart';
 import 'views/common/login_view.dart';
 import 'views/academy/academy_home_view.dart';
 import 'views/teacher/teacher_home_view.dart';
@@ -41,6 +42,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ClassViewModel()),
         ChangeNotifierProvider(create: (_) => AttendanceViewModel()),
         ChangeNotifierProvider(create: (_) => ChatViewModel()),
+        ChangeNotifierProvider(create: (_) => ScheduleViewModel()),
       ],
       child: const MyApp(),
     ),

@@ -6,7 +6,7 @@ import '../../viewmodels/chat_view_model.dart';
 import '../academy/academy_dashboard_view.dart';
 import '../academy/academy_students_view.dart';
 import '../academy/academy_classes_view.dart';
-import '../academy/academy_schedule_view.dart';
+import '../academy/schedule/academy_schedule_view.dart';
 import 'profile_view.dart';
 
 /// 홈 화면

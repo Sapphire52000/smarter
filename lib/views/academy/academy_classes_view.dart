@@ -547,6 +547,9 @@ class ClassData {
   final ClassStatus status;
   final DateTime startDate;
   final DateTime endDate;
+  final bool isRegularClass;
+  final int studentCount;
+  final List<StudentData> studentsList;
 
   ClassData({
     required this.id,
@@ -559,5 +562,17 @@ class ClassData {
     required this.status,
     required this.startDate,
     required this.endDate,
+    this.isRegularClass = true,
+    this.studentCount = 0,
+    this.studentsList = const [],
   });
+}
+
+/// 학생 데이터 모델
+class StudentData {
+  final String id;
+  final String name;
+  final String grade;
+
+  StudentData({required this.id, required this.name, required this.grade});
 }

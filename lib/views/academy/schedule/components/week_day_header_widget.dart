@@ -38,7 +38,8 @@ class WeekDayHeaderWidget extends StatelessWidget {
           final isToday = _isSameDay(date, DateTime.now());
           final isSelected = _isSameDay(date, selectedDate);
           final dayName = DateFormat('E', 'ko').format(date);
-          final dayNum = DateFormat('d').format(date);
+          // 날짜만 표시 (일 없이)
+          final dayNum = date.day.toString();
 
           return Expanded(
             child: GestureDetector(
